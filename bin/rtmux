@@ -1,0 +1,179 @@
+#!/usr/bin/env ruby
+# coding: UTF-8
+
+# rtmux
+# 
+# excutable for rtmux.rb
+# 
+# created on : 2013.08.12
+# last update: 2013.08.13
+# 
+# by meinside@gmail.com
+
+require "yaml"
+require "thor"
+
+require "rtmux"
+
+module RTmux
+
+  CONFIG_FILEPATH = File.expand_path("~/.rtmux.conf")
+
+  # predefined variables:
+  #  %d: current directory(where this script is run)'s name
+  #  %h: host name
+  #  %Y: year (eg. 2012)
+  #  %M: month (eg. 11)
+  #  %D: day (eg. 22)
+  RTMUX_CONFIG_EXAMPLE = <<EXAMPLE
+---
+rails:  # for rails projects
+  session_name: "%d"
+  windows:
+  - name: console
+  - name: models
+    cmd: cd ./app/models; clear
+  - name: views
+    cmd: cd ./app/views; clear
+  - name: controllers
+    cmd: cd ./app/controllers; clear
+  - name: configs
+    cmd: cd ./config; clear
+  - name: server
+    split:
+      vertical: true
+      percentage: 50
+      panes:
+      - pane: 1
+        cmd: rails server
+      - pane: 2
+        cmd: rails console
+  focus:
+    name: console
+    pane: 1
+EXAMPLE
+
+  # replace text for tmux session/window names
+  # @param txt [String] text
+  # @return [String] replaced text
+  def self.replace(txt)
+    unless txt
+      nil
+    else
+      txt
+        .gsub("%d", File.basename(Dir.pwd))
+        .gsub("%h", `hostname`)
+        .gsub("%Y", "%04d" %[Time.now.year])
+        .gsub("%M", "%02d" %[Time.now.month])
+        .gsub("%D", "%02d" %[Time.now.day])
+    end
+  end
+
+  # parse config with given filepath or text
+  # @param config_filepath_or_data [String] filepath or text
+  # @return [Hash] parsed config
+  def self.parse_config(config_filepath_or_data)
+    if File.exists? config_filepath_or_data
+      YAML.load_file(config_filepath_or_data)
+    else
+      YAML.load(config_filepath_or_data)
+    end
+  rescue
+    puts "# yml parse error: #{$!}"
+    return nil
+  end
+
+  class Exec < Thor
+    desc "launch [SESSION]", "Starts/resumes a session with given SESSION name"
+    long_desc <<LAUNCH_DESC
+You can preset sessions by placing a yml file named '.rtmux.conf' on $HOME.
+
+$ rtmux
+
+or
+
+$ rtmux launch
+
+=> Starts/resumes a session with default name(= hostname)
+
+
+$ rtmux [SESSION]
+
+or
+
+$ rtmux launch [SESSION]
+
+=> Starts/resumes a session with given SESSION name
+LAUNCH_DESC
+    method_option :verbose, type: :boolean
+    def launch(session = nil)
+      verbose = options.verbose?
+
+      # read config
+      if File.exists? CONFIG_FILEPATH
+        puts "> Loading config file: #{CONFIG_FILEPATH}" if verbose
+        configs = RTmux::parse_config(CONFIG_FILEPATH) || {}
+      else
+        puts "> Loading sample config" if verbose
+        configs = RTmux::parse_config(RTMUX_CONFIG_EXAMPLE) || {}
+      end
+      config = configs[session] || {}
+
+      # create/resume session
+      RTmux::TmuxHelper.new(RTmux::replace(config["session_name"]) || session){|tmux|
+        unless tmux.session_created?
+          # create, split windows and run commands in them
+          if windows = config["windows"]
+            windows.each{|window|
+              window_name = RTmux::replace(window["name"])
+              tmux.create_window(window_name, cmd: RTmux::replace(window["cmd"]))
+
+              if split = window["split"]
+                tmux.split(window_name, vertical: split["vertical"], percentage: split["percentage"])
+                if panes = split["panes"]
+                  panes.each{|pane|
+                    tmux.cmd(RTmux::replace(pane["cmd"]), window_name, pane: pane["pane"])
+                  }
+                end
+              end
+            }
+          else
+            tmux.create_window  # blank window
+          end
+
+          # focus on window
+          if focus = config["focus"]
+            tmux.focus(RTmux::replace(focus["name"]), pane: focus["pane"])
+          end
+        end
+
+        # finally, attach to it
+        tmux.attach
+      }
+    end
+    
+    desc "genconfig", "Generate a sample config file at #{CONFIG_FILEPATH}"
+    method_option :overwrite, type: :boolean
+    def genconfig
+      overwrite = options.overwrite?
+      if !overwrite && File.exists?(CONFIG_FILEPATH)
+        puts "* config file already exists at: #{CONFIG_FILEPATH}"
+      else
+        File.open(CONFIG_FILEPATH, "w"){|f|
+          f.write RTMUX_CONFIG_EXAMPLE
+        }
+        puts "* sample config file was written at: #{CONFIG_FILEPATH}"
+      end
+    end
+
+    def method_missing(method, *args)
+      launch method.to_s
+    end
+
+    # when run without any command, it just launches with no parameter
+    default_task :launch
+  end
+end
+
+RTmux::Exec::start(ARGV)
+
