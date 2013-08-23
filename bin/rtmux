@@ -6,7 +6,7 @@
 # excutable for rtmux.rb
 # 
 # created on : 2013.08.12
-# last update: 2013.08.13
+# last update: 2013.08.23
 # 
 # by meinside@gmail.com
 
@@ -15,6 +15,7 @@ require "thor"
 
 require "rtmux"
 
+# rtmux module
 module RTmux
 
   CONFIG_FILEPATH = File.expand_path("~/.rtmux.conf")
@@ -57,7 +58,7 @@ EXAMPLE
   # @param txt [String] text
   # @return [String] replaced text
   def self.replace(txt)
-    unless txt
+    if !txt
       nil
     else
       txt
@@ -83,6 +84,7 @@ EXAMPLE
     return nil
   end
 
+  # executable class
   class Exec < Thor
     desc "launch [SESSION]", "Starts/resumes a session with given SESSION name"
     long_desc <<LAUNCH_DESC
@@ -112,27 +114,27 @@ LAUNCH_DESC
       # read config
       if File.exists? CONFIG_FILEPATH
         puts "> Loading config file: #{CONFIG_FILEPATH}" if verbose
-        configs = RTmux::parse_config(CONFIG_FILEPATH) || {}
+        configs = RTmux.parse_config(CONFIG_FILEPATH) || {}
       else
         puts "> Loading sample config" if verbose
-        configs = RTmux::parse_config(RTMUX_CONFIG_EXAMPLE) || {}
+        configs = RTmux.parse_config(RTMUX_CONFIG_EXAMPLE) || {}
       end
       config = configs[session] || {}
 
       # create/resume session
-      RTmux::TmuxHelper.new(RTmux::replace(config["session_name"]) || session){|tmux|
+      RTmux::TmuxHelper.new(RTmux.replace(config["session_name"]) || session){|tmux|
         unless tmux.session_created?
           # create, split windows and run commands in them
-          if windows = config["windows"]
+          if (windows = config["windows"])
             windows.each{|window|
-              window_name = RTmux::replace(window["name"])
-              tmux.create_window(window_name, cmd: RTmux::replace(window["cmd"]))
+              window_name = RTmux.replace(window["name"])
+              tmux.create_window(window_name, cmd: RTmux.replace(window["cmd"]))
 
-              if split = window["split"]
+              if (split = window["split"])
                 tmux.split(window_name, vertical: split["vertical"], percentage: split["percentage"])
-                if panes = split["panes"]
+                if (panes = split["panes"])
                   panes.each{|pane|
-                    tmux.cmd(RTmux::replace(pane["cmd"]), window_name, pane: pane["pane"])
+                    tmux.cmd(RTmux.replace(pane["cmd"]), window_name, pane: pane["pane"])
                   }
                 end
               end
@@ -142,8 +144,8 @@ LAUNCH_DESC
           end
 
           # focus on window
-          if focus = config["focus"]
-            tmux.focus(RTmux::replace(focus["name"]), pane: focus["pane"])
+          if (focus = config["focus"])
+            tmux.focus(RTmux.replace(focus["name"]), pane: focus["pane"])
           end
         end
 
@@ -175,5 +177,5 @@ LAUNCH_DESC
   end
 end
 
-RTmux::Exec::start(ARGV)
+RTmux::Exec.start(ARGV)
 
