@@ -43,7 +43,7 @@ module RTmux
     # @return [true,false]
     def session_created?
       `tmux has-session -t #{@session_name} 2> /dev/null`
-      $CHILD_STATUS.exitstatus != 1
+      $?.exitstatus != 1
     end
 
     # check if window is already created or not
