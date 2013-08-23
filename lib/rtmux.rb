@@ -6,10 +6,11 @@
 # help create/resume tmux sessions
 # 
 # created on : 2012.11.22
-# last update: 2013.08.13
+# last update: 2013.08.23
 # 
 # by meinside@gmail.com
 
+# rtmux module
 module RTmux
 
 =begin
@@ -35,16 +36,14 @@ module RTmux
     def initialize(session_name, &block)
       @session_name = session_name || `hostname`.strip
 
-      if block_given?
-        yield self
-      end
+      yield self if block_given?
     end
 
     # check if session is already created or not
     # @return [true,false]
     def session_created?
       `tmux has-session -t #{@session_name} 2> /dev/null`
-      $?.exitstatus != 1
+      $CHILD_STATUS.exitstatus != 1
     end
 
     # check if window is already created or not
@@ -59,7 +58,7 @@ module RTmux
     # @param options [Hash] options
     def create_window(name = nil, options = {cmd: nil})
       if session_created?
-        unless window_created?(name)
+        if !window_created?(name)
           `tmux new-window -t #{@session_name} #{name.nil? ? "" : "-n #{name}"}`
         else
           return  # don't create duplicated windows
