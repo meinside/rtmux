@@ -6,7 +6,7 @@
 # help create/resume tmux sessions
 # 
 # created on : 2012.11.22
-# last update: 2013.08.23
+# last update: 2013.10.16
 # 
 # by meinside@gmail.com
 
@@ -32,8 +32,17 @@ module RTmux
 =end
   class TmuxHelper
     # initializer
-    # @param session_name [String] session name
+    # @param session_name [String] session name (default: hostname)
     def initialize(session_name, &block)
+      # check if tmux is installed or not
+      if `which tmux`.empty?
+        puts "* tmux is not installed on this machine"
+        puts "> brew install tmux"
+        puts "or"
+        puts "> sudo apt-get install tmux"
+        exit 1
+      end
+
       @session_name = session_name || `hostname`.strip
 
       yield self if block_given?

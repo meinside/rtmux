@@ -6,7 +6,7 @@
 # excutable for rtmux.rb
 # 
 # created on : 2013.08.12
-# last update: 2013.08.23
+# last update: 2013.10.16
 # 
 # by meinside@gmail.com
 
@@ -18,14 +18,14 @@ require "rtmux"
 # rtmux module
 module RTmux
 
-  CONFIG_FILEPATH = File.expand_path("~/.rtmux.conf")
+  CONFIG_FILEPATH = File.expand_path(File.join("~", ".rtmux.conf"))
 
   # predefined variables:
   #  %d: current directory(where this script is run)'s name
   #  %h: host name
-  #  %Y: year (eg. 2012)
-  #  %M: month (eg. 11)
-  #  %D: day (eg. 22)
+  #  %Y: year (eg. 2013)
+  #  %M: month (eg. 10)
+  #  %D: day (eg. 16)
   RTMUX_CONFIG_EXAMPLE = <<EXAMPLE
 ---
 rails:  # for rails projects

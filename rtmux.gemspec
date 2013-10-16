@@ -1,8 +1,8 @@
 Gem::Specification.new do |s|
   s.name        = 'rtmux'
-  s.version     = '0.0.1'
+  s.version     = '0.0.2'
   s.platform    = Gem::Platform::RUBY
-  s.date        = '2013-08-13'
+  s.date        = '2013-10-16'
   s.summary     = "tmux helper"
   s.description = "help create/resume tmux sessions"
   s.authors     = ["Sungjin Han"]
