@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'rtmux'
-  s.version     = '0.0.2'
+  s.version     = '0.0.3'
   s.platform    = Gem::Platform::RUBY
   s.date        = '2013-10-16'
   s.summary     = "tmux helper"

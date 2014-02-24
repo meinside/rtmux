@@ -6,7 +6,7 @@
 # help create/resume tmux sessions
 # 
 # created on : 2012.11.22
-# last update: 2013.10.16
+# last update: 2014.02.24
 # 
 # by meinside@gmail.com
 
@@ -43,7 +43,7 @@ module RTmux
         exit 1
       end
 
-      @session_name = session_name || `hostname`.strip
+      @session_name = session_name || `hostname -s`.strip
 
       yield self if block_given?
     end
