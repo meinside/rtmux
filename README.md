@@ -1,4 +1,6 @@
-## 0. Purpose
+# rtmux
+
+![Gem Version](http://img.shields.io/gem/v/rtmux.svg)
 
 For running Tmux with a little more easiness.
 
